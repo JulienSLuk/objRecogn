@@ -15,8 +15,12 @@ cap = cv2.VideoCapture(0)  # Use 0 for the default camera or replace with your c
 # Create a Matplotlib figure
 plt.figure()
 
+frame_number = 0  # Track frame number
+
 while True:
     ret, frame = cap.read()
+    
+    frame_number += 1  # Increment frame number
     
     # Prepare the image for detection
     blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416), swapRB=True, crop=False)
@@ -54,15 +58,25 @@ while True:
     # Non-maximum suppression to remove duplicate detections
     indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
     
-    # Draw bounding boxes and labels
+    # Draw bounding boxes and labels with class name and confidence
     for i in range(len(boxes)):
         if i in indices:
             box = boxes[i]
             x, y, w, h = box
             label = str(classes[class_ids[i]])
             confidence = confidences[i]
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(frame, f"{label} {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            color = (0, 255, 0)  # Default color (green)
+            
+            # Assign different colors for different classes
+            if label == 'person':
+                color = (0, 0, 255)  # Red for 'person' class
+            
+            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+            text = f"{label}: {confidence:.2f}"
+            cv2.putText(frame, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    
+    # Overlay frame number and timestamp
+    timestamp = cv2.putText(frame, f"Frame: {frame_number}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
     
     # Display the frame with detections using Matplotlib
     plt.clf()
