@@ -17,6 +17,11 @@ plt.figure()
 
 frame_number = 0  # Track frame number
 
+def get_average_color(image, x, y, w, h):
+    roi = image[y:y + h, x:x + w]  # Extract the region of interest
+    average_color = np.mean(roi, axis=(0, 1))  # Calculate the average color in the region
+    return tuple(average_color.astype(int))
+
 while True:
     ret, frame = cap.read()
     
@@ -58,22 +63,24 @@ while True:
     # Non-maximum suppression to remove duplicate detections
     indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
     
-    # Draw bounding boxes and labels with class name and confidence
+    # Draw bounding boxes and labels with class name, confidence, and color
     for i in range(len(boxes)):
         if i in indices:
             box = boxes[i]
             x, y, w, h = box
             label = str(classes[class_ids[i]])
             confidence = confidences[i]
-            color = (0, 255, 0)  # Default color (green)
+            color = get_average_color(frame, x, y, w, h)  # Get the average color
             
-            # Assign different colors for different classes
-            if label == 'person':
-                color = (0, 0, 255)  # Red for 'person' class
-            
-            cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
             text = f"{label}: {confidence:.2f}"
-            cv2.putText(frame, text, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            
+            # Additional details: position, size, and color
+            text += f" | Position: ({x}, {y})"
+            text += f" | Size: ({w}, {h})"
+            text += f" | Color: {color}"
+            
+            cv2.putText(frame, text, (x, y - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
     
     # Overlay frame number and timestamp
     timestamp = cv2.putText(frame, f"Frame: {frame_number}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
